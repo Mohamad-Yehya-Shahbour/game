@@ -1,0 +1,78 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".validate": "$code.matches(/^[A-Z2-9]{10}$/)",
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('players/h/uid').val() === auth.uid) || data.child('players/h/uid').val() === auth.uid)",
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "config": {
+          "mode": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "count": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "$other": { ".validate": false }
+        },
+        "players": {
+          "h": {
+            ".validate": "newData.hasChildren(['uid','name']) && newData.child('name').isString() && newData.child('name').val().length <= 32",
+            "uid": { ".validate": "newData.isString()" },
+            "name": { ".validate": "newData.isString()" },
+            "$other": { ".validate": false }
+          },
+          "g": {
+            ".write": "auth != null && root.child('rooms').child($code).child('players').child('h').child('uid').exists() && (!data.exists() || data.child('uid').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['uid','name']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 32",
+            "uid": { ".validate": "newData.isString()" },
+            "name": { ".validate": "newData.isString()" },
+            "$other": { ".validate": false }
+          },
+          "$other": { ".validate": false }
+        },
+        "state": {
+          ".write": "auth != null && (root.child('rooms').child($code).child('players').child('h').child('uid').val() === auth.uid || root.child('rooms').child($code).child('players').child('g').child('uid').val() === auth.uid)",
+          ".validate": "newData.hasChildren(['phase','idx'])",
+          "phase": { ".validate": "newData.isString() && newData.val().matches(/^(waiting|question|reveal|end)$/)" },
+          "idx": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+          "round": { ".validate": "newData.isNumber()" },
+          "scores": {
+            "$i": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+          },
+          "$other": { ".validate": false }
+        },
+        "questions": {
+          "$i": {
+            ".validate": "newData.hasChildren(['id','type','q'])",
+            "id": { ".validate": "newData.isString()" },
+            "type": { ".validate": "newData.isString() && newData.val().matches(/^(know|same|tricky|open)$/)" },
+            "q": { ".validate": "newData.isString() && newData.val().length <= 300" },
+            "options": {
+              "$j": { ".validate": "newData.isString() && newData.val().length <= 120" }
+            },
+            "$other": { ".validate": false }
+          }
+        },
+        "answers": {
+          "$idx": {
+            ".validate": "$idx.matches(/^[0-9]{1,3}$/)",
+            "g": {
+              ".write": "auth != null && root.child('rooms').child($code).child('players').child('g').child('uid').val() === auth.uid"
+            },
+            "$seat": {
+              ".validate": "($seat === 'h' || $seat === 'g') && newData.hasChildren()",
+              "own": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+              "guess": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+              "text": { ".validate": "newData.isString() && newData.val().length <= 1500" },
+              "$other": { ".validate": false }
+            }
+          }
+        },
+        "presence": {
+          "g": {
+            ".write": "auth != null && root.child('rooms').child($code).child('players').child('g').child('uid').val() === auth.uid"
+          },
+          "$seat": { ".validate": "($seat === 'h' || $seat === 'g') && newData.isBoolean()" }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
